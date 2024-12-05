@@ -36,16 +36,19 @@ exe.root_module.addImport("zeptolibc", zeptolibc_dep.module("zeptolibc"));
 
 Add `#include "zeptolibc.h"` to your C code.
 
+```c
     #include "zeptolibc.h"
 
     void my_greeting(void) {
         printf("Hello world\n");
     }
+```
 
 Setup ZeptoLibC from Zig and call the C code.
 
 `zeptolibc.init()` may be passed `null` for both writer and allocator. A `null` allocator will cause `malloc()` to always return `NULL`. A `null` writer will silently drop written data.
 
+```zig
     const std = @import("std");
     const zeptolibc = @import("zeptolibc");
 
@@ -63,5 +66,5 @@ Setup ZeptoLibC from Zig and call the C code.
 
         c.my_greeting();
     }
-
+```
 
