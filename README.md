@@ -18,6 +18,8 @@ All ZeptoLibC functions start with the prefix `zepto_`, eg. `zepto_malloc()` so 
 
 # How to use
 
+For a complete example, see https://github.com/ringtailsoftware/zeptolibc-example
+
 First we add the library as a dependency in our `build.zig.zon` file.
 
 zig fetch --save git+https://github.com/ringtailsoftware/zeptolibc.git
@@ -30,6 +32,7 @@ const zeptolibc_dep = b.dependency("zeptolibc", .{
 });
 
 exe.root_module.addImport("zeptolibc", zeptolibc_dep.module("zeptolibc"));
+exe.addIncludePath(zeptolibc_dep.path("src/"));
 ```
 
 # Usage:
