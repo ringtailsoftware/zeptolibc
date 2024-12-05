@@ -10,7 +10,7 @@ ZeptoLibC provides, among others:
  - `printf()`, `fprintf()`, `snprintf()`
  - `strcat()`, `strcpy()`, `strncmp()`, `strchr()`, `strncpy()`
  - `abs()`, `fabs()`, `sin()`, `cos()`, `sqrt()`, `pow()`, `floor()`, `ceil()`
- - `memcmp()``, `memset()`, `memmove()`
+ - `memcmp()`, `memset()`, `memmove()`
 
 ZeptoLibC is not intended to implement the full C library and does the bare minimum to support I/O operations (just `printf()`). The aim is to allow simple porting of existing C code to freestanding/baremetal environments such as WASM and embedded systems.
 
