@@ -6,7 +6,7 @@ const zeptolibc = @cImport({
 const alloc_align = 16;
 const alloc_metadata_len = std.mem.alignForward(usize, alloc_align, @sizeOf(usize));
 
-var allocatorOpt:?std.mem.Allocator = undefined;
+var allocatorOpt:?std.mem.Allocator = null;
 var writeFnOpt:?*const fn(data:[]const u8) void = null;
 
 pub fn init(alloO: ?std.mem.Allocator, writeFnO:?* const fn(data:[]const u8) void) void {
