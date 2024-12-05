@@ -7,11 +7,11 @@ const alloc_align = 16;
 const alloc_metadata_len = std.mem.alignForward(usize, alloc_align, @sizeOf(usize));
 
 var allocatorOpt:?std.mem.Allocator = undefined;
-var writerOpt:?std.fs.File.Writer = null;
+var writeFnOpt:?*const fn(data:[]const u8) void = null;
 
-pub fn init(alloO: ?std.mem.Allocator, writerO:?std.fs.File.Writer) void {
+pub fn init(alloO: ?std.mem.Allocator, writeFnO:?* const fn(data:[]const u8) void) void {
     allocatorOpt = alloO;
-    writerOpt = writerO;
+    writeFnOpt = writeFnO;
 }
 
 // NOTE: this is not a libc function, it's exported so it can be used
@@ -38,8 +38,8 @@ export fn _formatCUlonglong(buf: [*]u8, value: c_ulonglong, base: u8) callconv(.
 
 export fn _fwrite_buf(ptr: [*]const u8, size: usize, stream: *zeptolibc.FILE) callconv(.C) usize {
     _ = stream;
-    if (writerOpt) |writer| {
-        _ = writer.write(ptr[0..size]) catch return 0;
+    if (writeFnOpt) |writeFn| {
+        writeFn(ptr[0..size]);
     }
     return size;
 }
