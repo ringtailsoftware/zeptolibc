@@ -12,6 +12,7 @@ pub fn build(b: *std.Build) void {
         .flags = &.{"-Wall"},
     });
     zeptolibc_mod.addIncludePath(b.path("src/"));
+    zeptolibc_mod.addSystemIncludePath(b.path("src/"));
 
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
