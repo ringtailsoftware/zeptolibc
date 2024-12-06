@@ -22,7 +22,7 @@ For a complete example, see https://github.com/ringtailsoftware/zeptolibc-exampl
 
 First we add the library as a dependency in our `build.zig.zon` file.
 
-zig fetch --save git+https://github.com/ringtailsoftware/zeptolibc.git
+`zig fetch --save git+https://github.com/ringtailsoftware/zeptolibc.git`
 
 And we add it to `build.zig` file.
 ```zig
