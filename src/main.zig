@@ -109,12 +109,12 @@ pub export fn zepto_strncpy(s1: [*]u8, s2: [*:0]const u8, n: usize) callconv(.C)
     return s1;
 }
 
-pub export fn zepto_memcpy(dst: [*]u8, src: [*]u8, size: c_int) callconv(.C) [*]u8 {
+pub export fn zepto_memcpy(dst: [*]u8, src: [*]u8, size: usize) callconv(.C) [*]u8 {
     @memcpy(dst[0..@intCast(size)], src[0..@intCast(size)]);
     return dst;
 }
 
-pub export fn zepto_memset(dst: [*]u8, val: u8, size: c_int) callconv(.C) [*]u8 {
+pub export fn zepto_memset(dst: [*]u8, val: u8, size: usize) callconv(.C) [*]u8 {
     @memset(dst[0..@intCast(size)], val);
     return dst;
 }
@@ -143,7 +143,6 @@ pub export fn zepto_ceil(x: f64) callconv(.C) f64 {
 pub export fn zepto_fmod(x: f64, y: f64) callconv(.C) f64 {
     return @mod(x, y);
 }
-
 
 fn getGpaBuf(ptr: [*]u8) []align(alloc_align) u8 {
     const start = @intFromPtr(ptr) - alloc_metadata_len;
@@ -211,6 +210,9 @@ pub export fn zepto_calloc(nmemb: usize, size: usize) callconv(.C) ?[*]align(all
         //errno = c.ENOMEM;
         return null;
     };
+    if (total == 0) {
+        return null;
+    }
     const ptr = zepto_malloc(total) orelse return null;
     @memset(ptr[0..total], 0);
     return ptr;

@@ -21,19 +21,15 @@ static FILE stderr_file;
 #define stdout &stdout_file
 #define stderr &stderr_file
 
-extern void *zepto_memcpy(void *dst, const void *src, int n);
-extern void *zepto_memset(void *dst, int val, int len);
+extern void *zepto_memcpy(void *dst, const void *src, size_t n);
+extern void *zepto_memset(void *dst, char val, size_t n);
 extern void zepto_print(char *s);
-extern void *zepto_memmove(void *dst, const void *src, int n);
-extern void *zepto_malloc(int n);
+extern void *zepto_memmove(void *dst, const void *src, size_t n);
+extern void *zepto_malloc(size_t n);
 extern void zepto_free(void *p);
-extern void *zepto_realloc(void *p, int n);
-extern int zepto_strlen(const char *s);
-extern int zepto_memcmp(void *a, void *b, int n);
-extern char *zepto_strchr(const char *s, char c);
-extern int zepto_atoi(const char *s);
-extern char *zepto_strcat(char *a, const char *b);
-extern char *zepto_strcpy(char *a, const char *b);
+extern void *zepto_realloc(void *p, size_t n);
+extern size_t zepto_strlen(const char *s);
+extern char *zepto_strchr(const char *s, int c);
 extern int zepto_snprintf(char * str, size_t size, const char *format,...);
 extern int zepto_abs(int a);
 extern int zepto_strncmp(const char *s1, const char *s2, size_t n);
@@ -42,7 +38,7 @@ extern int zepto_fprintf(FILE *, const char * format, ...);
 extern void zepto_abort(void);
 extern void zepto_exit(int e);
 extern char *zepto_strncpy(char * dst, const char * src, size_t len);
-extern void *zepto_calloc(int n, char c);
+extern void *zepto_calloc(size_t n, size_t c);
 extern double zepto_sin(double x);
 extern double zepto_floor(double x);
 extern double zepto_cos(double x);
