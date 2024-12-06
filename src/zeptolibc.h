@@ -41,7 +41,10 @@ extern char *zepto_strncpy(char * dst, const char * src, size_t len);
 extern void *zepto_calloc(size_t n, size_t c);
 extern double zepto_sin(double x);
 extern double zepto_floor(double x);
+extern double zepto_ceil(double x);
 extern double zepto_cos(double x);
+extern double zepto_acos(double x);
+extern double zepto_fmod(double x, double y);
 extern double zepto_fabs(double x);
 extern double zepto_sqrt(double x);
 extern double zepto_pow(double x, double y);
@@ -72,10 +75,13 @@ extern int printf(const char * format, ...);
 #define strncpy zepto_strncpy
 #define sin zepto_sin
 #define floor zepto_floor
+#define ceil zepto_ceil
 #define cos zepto_cos
 #define fabs zepto_fabs
 #define sqrt zepto_sqrt
 #define pow zepto_pow
+#define acos zepto_acos
+#define fmod zepto_fmod
 
 #endif
 

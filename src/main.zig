@@ -125,6 +125,9 @@ pub export fn zepto_sin(x: f64) callconv(.C) f64 {
 pub export fn zepto_cos(x: f64) callconv(.C) f64 {
     return @cos(x);
 }
+pub export fn zepto_acos(x: f64) callconv(.C) f64 {
+    return std.math.acos(x);
+}
 pub export fn zepto_sqrt(x: f64) callconv(.C) f64 {
     return std.math.sqrt(x);
 }
