@@ -49,7 +49,7 @@ Add `#include "zeptolibc.h"` to your C code.
 
 Setup ZeptoLibC from Zig and call the C code.
 
-`zeptolibc.init()` may be passed `null` for both writer and allocator. A `null` allocator will cause `malloc()` to always return `NULL`. A `null` writer will silently drop written data.
+`zeptolibc.init()` may be passed `null` for both write function and allocator. A `null` allocator will cause `malloc()` to always return `NULL`. A `null` write function will silently drop written data.
 
 ```zig
     const std = @import("std");
@@ -59,13 +59,16 @@ Setup ZeptoLibC from Zig and call the C code.
         @cInclude("greeting.c");
     });
 
+    fn writeFn(data:[]const u8) void {
+        _ = std.io.getStdOut().writer().write(data) catch 0;
+    }
+
     pub fn main() !void {
-        const writer = std.io.getStdOut().writer();
         var gpa = std.heap.GeneralPurposeAllocator(.{}){};
         const allocator = gpa.allocator();
 
-        // init zepto with a memory allocator and a writer (for stdout and stderr)
-        zeptolibc.init(allocator, writer);
+        // init zepto with a memory allocator and a write function (used for stdout and stderr)
+        zeptolibc.init(allocator, writeFn);
 
         c.my_greeting();
     }
