@@ -1,8 +1,9 @@
-#ifndef TERMINAL_H
-#define TERMINAL_H 1
-#include <stddef.h>
-#include <stdbool.h>
+#ifndef ZEPTOLIBC_H
+#define ZEPTOLIBC_H 1
+
 #include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdarg.h>
 
 #define ssize_t int
