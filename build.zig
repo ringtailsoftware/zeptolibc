@@ -22,13 +22,10 @@ pub fn build(b: *std.Build) void {
 
     libc.installHeadersDirectory(b.path("include/zeptolibc"), "zeptolibc", .{});
 
-//    b.installArtifact(libc);
-    
     const zeptolibc_mod = b.addModule("zeptolibc", .{
         .root_source_file = b.path("src/main.zig"),
     });
     zeptolibc_mod.addIncludePath(b.path("include"));
-//    zeptolibc_mod.linkLibrary(libc);
 }
 
 const header_files = [_][]const u8{

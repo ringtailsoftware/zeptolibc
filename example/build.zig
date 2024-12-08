@@ -29,9 +29,6 @@ pub fn build(b: *std.Build) void {
 
     exe.root_module.addImport("zeptolibc", zeptolibc_dep.module("zeptolibc"));
     exe.addIncludePath(zeptolibc_dep.path("include"));
-    //exe.addObjectFile(zeptolibc_dep.path("zig-out/lib/libzeptolibc.a"));
-//    exe.addLibraryPath(zeptolibc_dep.path("lib"));
-//    exe.addObjectFile(zeptolibc_dep.path("lib/libzeptolibc.a"));
 
     exe.addIncludePath(b.path("src/"));
 
