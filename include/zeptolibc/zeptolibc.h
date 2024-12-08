@@ -24,7 +24,6 @@ static FILE stderr_file;
 
 extern void *zepto_memcpy(void *dst, const void *src, size_t n);
 extern void *zepto_memset(void *dst, char val, size_t n);
-extern void zepto_print(char *s);
 extern void *zepto_memmove(void *dst, const void *src, size_t n);
 extern void *zepto_malloc(size_t n);
 extern void zepto_free(void *p);
@@ -49,8 +48,7 @@ extern double zepto_fmod(double x, double y);
 extern double zepto_fabs(double x);
 extern double zepto_sqrt(double x);
 extern double zepto_pow(double x, double y);
-
-extern int printf(const char * format, ...);
+extern int zepto_printf(const char * format, ...);
 
 #define memcpy zepto_memcpy
 #define memset zepto_memset
@@ -83,6 +81,7 @@ extern int printf(const char * format, ...);
 #define pow zepto_pow
 #define acos zepto_acos
 #define fmod zepto_fmod
+#define printf(...) zepto_fprintf(stdout, __VA_ARGS__)
 
 #endif
 

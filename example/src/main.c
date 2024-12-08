@@ -1,8 +1,11 @@
-#include "zeptolibc.h"
+#include <zeptolibc/zeptolibc.h>
 
 void cmain(void) {
     uint8_t *buf;
     const char *greeting = "Hello world\n";
+
+    fprintf(stderr, "At the start\n");
+    fprintf(stderr, "Printf test (10,foo,0xDEADBEEF) = (%d,%s,%x)\n", 10, "foo", 0xDEADBBEF);
 
     buf = malloc(128);
     if (buf == NULL) {

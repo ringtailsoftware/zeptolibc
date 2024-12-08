@@ -1,13 +1,13 @@
 const std = @import("std");
 const zeptolibc = @cImport({
-    @cInclude("zeptolibc.h");
+    @cInclude("zeptolibc/zeptolibc.h");
 });
 
 const alloc_align = 16;
 const alloc_metadata_len = std.mem.alignForward(usize, alloc_align, @sizeOf(usize));
 
-var allocatorOpt:?std.mem.Allocator = null;
-var writeFnOpt:?*const fn(data:[]const u8) void = null;
+pub var allocatorOpt:?std.mem.Allocator = null;
+pub var writeFnOpt:?*const fn(data:[]const u8) void = null;
 
 pub fn init(alloO: ?std.mem.Allocator, writeFnO:?* const fn(data:[]const u8) void) void {
     allocatorOpt = alloO;
@@ -45,12 +45,11 @@ pub export fn _fwrite_buf(ptr: [*]const u8, size: usize, stream: *zeptolibc.FILE
 }
 
 pub export fn zepto_exit(code:c_int) void {
-    std.log.err("EXIT {d}\n", .{code});
+    _ = code;
     while (true) {}
 }
 
 pub export fn zepto_abort() void {
-    std.log.err("ABORT\n", .{});
     while (true) {}
 }
 
@@ -90,10 +89,6 @@ pub export fn zepto_strchr(s: [*:0]const u8, char: c_int) callconv(.C) ?[*:0]con
         if (next[0] == char) return next;
         if (next[0] == 0) return null;
     }
-}
-
-pub export fn zepto_print(msg: [*:0]const u8) callconv(.C) void {
-    std.log.err("{s}", .{std.mem.span(msg)});
 }
 
 pub export fn zepto_strnlen(s: [*:0]const u8, max_len: usize) usize {
@@ -231,4 +226,59 @@ pub export fn zepto_free(ptr: ?[*]align(alloc_align) u8) callconv(.C) void {
 pub export fn zepto_abs(n:c_int) c_int {
     return @intCast(@abs(n));
 }
+
+//https://github.com/binarycraft007/xv6-riscv-zig/blob/2ed6f50360e2a199866915ef5bb3222b911b5076/src/kernel/log.zig#L57
+pub export fn zepto_fprintf(stream:*zeptolibc.FILE, format: [*:0]const u8, ...) c_int {
+    _ = stream;
+    if (writeFnOpt) |writeFn| {
+        if (std.mem.span(format).len == 0) @panic("null fmt");
+
+        var ap = @cVaStart();
+        var skip_idx: usize = undefined;
+        for (std.mem.span(format), 0..) |byte, i| {
+            if (i == skip_idx) {
+                continue;
+            }
+            if (byte != '%') {
+                writeFn(&.{byte});
+                continue;
+            }
+            const c = format[i + 1] & 0xff;
+            skip_idx = i + 1;
+            if (c == 0) break;
+
+            var buf:[32]u8 = undefined;
+
+            switch (c) {
+                'd' => {
+                    const s = std.fmt.bufPrint(&buf, "{d}", .{@cVaArg(&ap, c_int)}) catch &.{};
+                    writeFn(s);
+                },
+                'x' => {
+                    const s = std.fmt.bufPrint(&buf, "{x}", .{@cVaArg(&ap, usize)}) catch &.{};
+                    writeFn(s);
+                },
+                'p' => {
+                    const s = std.fmt.bufPrint(&buf, "{p}", .{@cVaArg(&ap, *usize)}) catch &.{};
+                    writeFn(s);
+                },
+                's' => {
+                    const s = std.mem.span(@cVaArg(&ap, [*:0]const u8));
+                    writeFn(s);
+                },
+                '%' => {
+                    writeFn(&.{'%'});
+                },
+                else => {
+                    // Print unknown % sequence to draw attention.
+                    writeFn(&.{'%'});
+                    writeFn(&.{c});
+                },
+            }
+        }
+        @cVaEnd(&ap);
+    }
+    return 0;   // FIXME
+}
+
 
