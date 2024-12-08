@@ -21,6 +21,6 @@ jobs:
         run: zig build
         working-directory: zeptolibc
       - name: Build example
-        run: zig build helloworld
-        working-directory: zeptolibc
+        run: zig build run
+        working-directory: zeptolibc/example
 
