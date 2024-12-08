@@ -16,5 +16,9 @@ void cmain(void) {
     strncpy(buf, greeting, strlen(greeting)+1);
 
     printf("%s\n", buf);
+
+    snprintf(buf, 128, "'The answer is: %d'\n", 42);
+    printf("snprintf: %s\n", buf);
+
     free(buf);
 }

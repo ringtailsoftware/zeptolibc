@@ -14,36 +14,6 @@ pub fn init(alloO: ?std.mem.Allocator, writeFnO:?* const fn(data:[]const u8) voi
     writeFnOpt = writeFnO;
 }
 
-// NOTE: this is not a libc function, it's exported so it can be used
-//       by vformat in libc.c
-// buf must be at least 100 bytes
-pub export fn _formatCInt(buf: [*]u8, value: c_int, base: u8) callconv(.C) usize {
-    return std.fmt.formatIntBuf(buf[0..100], value, base, .lower, .{});
-}
-pub export fn _formatCUint(buf: [*]u8, value: c_uint, base: u8) callconv(.C) usize {
-    return std.fmt.formatIntBuf(buf[0..100], value, base, .lower, .{});
-}
-pub export fn _formatCLong(buf: [*]u8, value: c_long, base: u8) callconv(.C) usize {
-    return std.fmt.formatIntBuf(buf[0..100], value, base, .lower, .{});
-}
-pub export fn _formatCUlong(buf: [*]u8, value: c_ulong, base: u8) callconv(.C) usize {
-    return std.fmt.formatIntBuf(buf[0..100], value, base, .lower, .{});
-}
-pub export fn _formatCLonglong(buf: [*]u8, value: c_longlong, base: u8) callconv(.C) usize {
-    return std.fmt.formatIntBuf(buf[0..100], value, base, .lower, .{});
-}
-pub export fn _formatCUlonglong(buf: [*]u8, value: c_ulonglong, base: u8) callconv(.C) usize {
-    return std.fmt.formatIntBuf(buf[0..100], value, base, .lower, .{});
-}
-
-pub export fn _fwrite_buf(ptr: [*]const u8, size: usize, stream: *zeptolibc.FILE) callconv(.C) usize {
-    _ = stream;
-    if (writeFnOpt) |writeFn| {
-        writeFn(ptr[0..size]);
-    }
-    return size;
-}
-
 pub export fn zepto_exit(code:c_int) void {
     _ = code;
     while (true) {}
@@ -227,9 +197,83 @@ pub export fn zepto_abs(n:c_int) c_int {
     return @intCast(@abs(n));
 }
 
+// try to append some data into &buf[bufOff]
+fn tryAppendBuf(buf:[*:0]u8, size:usize, bufOff:*usize, data:[]const u8) bool {
+    if (bufOff.* + data.len > size-1) {   // room to null terminate
+        return false;
+    } else {
+        for (0..data.len) |i| {
+            buf[i + bufOff.*] = data[i];
+        }
+        bufOff.* += data.len;
+        return true;
+    }
+}
+
+pub export fn zepto_vsnprintf(str:[*:0]u8, size:usize, format: [*:0]const u8, ap:*std.builtin.VaList) c_int {
+    if (std.mem.span(format).len == 0) @panic("null fmt");
+
+    var bufOff:usize = 0;
+
+    var skip_idx: usize = undefined;
+    for (std.mem.span(format), 0..) |byte, i| {
+        if (i == skip_idx) {
+            continue;
+        }
+        if (byte != '%') {
+            if (!tryAppendBuf(str, size, &bufOff, &.{byte})) return @intCast(bufOff);
+            continue;
+        }
+        const c = format[i + 1] & 0xff;
+        skip_idx = i + 1;
+        if (c == 0) break;
+
+        var buf:[32]u8 = undefined;
+
+        switch (c) {
+            'd' => {
+                const s = std.fmt.bufPrint(&buf, "{d}", .{@cVaArg(ap, c_int)}) catch &.{};
+                if (!tryAppendBuf(str, size, &bufOff, s)) return @intCast(bufOff);
+            },
+            'x' => {
+                const s = std.fmt.bufPrint(&buf, "{x}", .{@cVaArg(ap, usize)}) catch &.{};
+                if (!tryAppendBuf(str, size, &bufOff, s)) return @intCast(bufOff);
+            },
+            'p' => {
+                const s = std.fmt.bufPrint(&buf, "{p}", .{@cVaArg(ap, *usize)}) catch &.{};
+                if (!tryAppendBuf(str, size, &bufOff, s)) return @intCast(bufOff);
+            },
+            's' => {
+                const s = std.mem.span(@cVaArg(ap, [*:0]const u8));
+                if (!tryAppendBuf(str, size, &bufOff, s)) return @intCast(bufOff);
+            },
+            '%' => {
+                if (!tryAppendBuf(str, size, &bufOff, &.{'%'})) return @intCast(bufOff);
+            },
+            else => {
+                // Print unknown % sequence to draw attention.
+                if (!tryAppendBuf(str, size, &bufOff, &.{'%', c})) return @intCast(bufOff);
+            },
+        }
+    }
+
+    str[bufOff] = 0;
+
+    return @intCast(bufOff);
+}
+
+pub export fn zepto_snprintf(str:[*:0]u8, size:usize, format: [*:0]const u8, ...) c_int {
+    var ap = @cVaStart();
+    const result = zepto_vsnprintf(str, size, format, &ap);
+    @cVaEnd(&ap);
+    return result;
+}
+
 //https://github.com/binarycraft007/xv6-riscv-zig/blob/2ed6f50360e2a199866915ef5bb3222b911b5076/src/kernel/log.zig#L57
+//extern int zepto_fprintf(FILE *, const char * format, ...);
 pub export fn zepto_fprintf(stream:*zeptolibc.FILE, format: [*:0]const u8, ...) c_int {
     _ = stream;
+    var written:usize = 0;
     if (writeFnOpt) |writeFn| {
         if (std.mem.span(format).len == 0) @panic("null fmt");
 
@@ -241,6 +285,7 @@ pub export fn zepto_fprintf(stream:*zeptolibc.FILE, format: [*:0]const u8, ...) 
             }
             if (byte != '%') {
                 writeFn(&.{byte});
+                written += 1;
                 continue;
             }
             const c = format[i + 1] & 0xff;
@@ -253,32 +298,38 @@ pub export fn zepto_fprintf(stream:*zeptolibc.FILE, format: [*:0]const u8, ...) 
                 'd' => {
                     const s = std.fmt.bufPrint(&buf, "{d}", .{@cVaArg(&ap, c_int)}) catch &.{};
                     writeFn(s);
+                    written += s.len;
                 },
                 'x' => {
                     const s = std.fmt.bufPrint(&buf, "{x}", .{@cVaArg(&ap, usize)}) catch &.{};
                     writeFn(s);
+                    written += s.len;
                 },
                 'p' => {
                     const s = std.fmt.bufPrint(&buf, "{p}", .{@cVaArg(&ap, *usize)}) catch &.{};
                     writeFn(s);
+                    written += s.len;
                 },
                 's' => {
                     const s = std.mem.span(@cVaArg(&ap, [*:0]const u8));
                     writeFn(s);
+                    written += s.len;
                 },
                 '%' => {
                     writeFn(&.{'%'});
+                    written += 1;
                 },
                 else => {
                     // Print unknown % sequence to draw attention.
                     writeFn(&.{'%'});
                     writeFn(&.{c});
+                    written += 2;
                 },
             }
         }
         @cVaEnd(&ap);
     }
-    return 0;   // FIXME
+    return @intCast(written);
 }
 
 
