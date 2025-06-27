@@ -1,5 +1,6 @@
 .{
-    .name = "zeptolibc",
+    .name = .zeptolibc,
+    .fingerprint = 0xc9b00d8927e5774f,
     .version = "0.0.1",
     .dependencies = .{},
     .paths = .{

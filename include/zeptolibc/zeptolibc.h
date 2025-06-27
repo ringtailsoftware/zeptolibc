@@ -49,6 +49,7 @@ extern double zepto_fabs(double x);
 extern double zepto_sqrt(double x);
 extern double zepto_pow(double x, double y);
 extern int zepto_printf(const char * format, ...);
+extern float zepto_sqrtf(float x);
 
 #define memcpy zepto_memcpy
 #define memset zepto_memset
@@ -82,6 +83,7 @@ extern int zepto_printf(const char * format, ...);
 #define acos zepto_acos
 #define fmod zepto_fmod
 #define printf(...) zepto_fprintf(stdout, __VA_ARGS__)
+#define sqrtf zepto_sqrtf
 
 #endif
 
