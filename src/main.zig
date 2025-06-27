@@ -150,7 +150,7 @@ pub export fn zepto_realloc(ptr: ?[*]align(alloc_align) u8, size: usize) callcon
         }
 
         const gpa_size = alloc_metadata_len + size;
-        if (allocator.rawResize(gpa_buf, std.math.log2(alloc_align), gpa_size, @returnAddress())) {
+        if (allocator.rawResize(gpa_buf, std.mem.Alignment.fromByteUnits(std.math.log2(alloc_align)), gpa_size, @returnAddress())) {
             @as(*usize, @ptrCast(gpa_buf.ptr)).* = gpa_size;
             return ptr;
         }
