@@ -118,39 +118,6 @@ fn getGpaBuf(ptr: [*]u8) []align(@alignOf(usize)) u8 {
     return @alignCast(@as([*]u8, @ptrFromInt(start))[0..len]);
 }
 
-//fn term_malloc(size: usize, user: ?*anyopaque) callconv(.c) ?*anyopaque {
-//    if (user) |userptr| {
-//        const self: *ZVTerm = @ptrCast(@alignCast(userptr));
-//        if (size == 0) {
-//            return null;
-//        }
-//        const full_len = alloc_metadata_len + size;
-//        const buf = self.allocator.alignedAlloc(u8, alloc_align, full_len) catch |err| switch (err) {
-//            error.OutOfMemory => return null,
-//        };
-//        @as(*usize, @ptrCast(buf)).* = full_len;
-//        const result = @as([*]align(@alignOf(usize)) u8, @ptrFromInt(@intFromPtr(buf.ptr) + alloc_metadata_len));
-//        @memset(result[0..size], 0); // zero memory
-//        return result;
-//    } else {
-//        return null;
-//    }
-//}
-//
-//fn getAllocBuf(ptr: [*]u8) []align(@alignOf(usize)) u8 {
-//    const start = @intFromPtr(ptr) - alloc_metadata_len;
-//    const len = @as(*usize, @ptrFromInt(start)).*;
-//    return @alignCast(@as([*]u8, @ptrFromInt(start))[0..len]);
-//}
-//
-//fn term_free(ptr: ?*anyopaque, user: ?*anyopaque) callconv(.c) void {
-//    if (user) |userptr| {
-//        const self: *ZVTerm = @ptrCast(@alignCast(userptr));
-//        const p = ptr orelse return;
-//        self.allocator.free(getAllocBuf(@ptrCast(p)));
-//    }
-//}
-
 pub export fn zepto_malloc(size: usize) callconv(.c) ?[*]align(@alignOf(usize)) u8 {
     if (size == 0) {
         return null;
