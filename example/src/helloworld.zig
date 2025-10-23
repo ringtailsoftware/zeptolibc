@@ -6,8 +6,11 @@ const c = @cImport({
 });
 
 fn writeFn(data:[]const u8) void {
-//    _ = data;
-    _ = std.io.getStdOut().writer().write(data) catch 0;
+    var buf: [512]u8 = undefined;
+    var w = std.fs.File.stdout().writer(&buf);
+    const stdout = &w.interface;
+    _ = stdout.write(data) catch 0;
+    _ = stdout.flush() catch 0;
 }
 
 pub fn main() !void {

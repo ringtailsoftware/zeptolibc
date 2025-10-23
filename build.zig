@@ -4,12 +4,15 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const libc = b.addStaticLibrary(.{
+    const libc = b.addLibrary(.{
+        .linkage = .static,
         .name = "zeptolibc",
-        .target = target,
-        .optimize = optimize,
-        .root_source_file = b.path("src/main.zig"),
-        .single_threaded = true,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+            .single_threaded = true,
+        }),
     });
 
     libc.addIncludePath(b.path("include"));

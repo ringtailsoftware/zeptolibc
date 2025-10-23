@@ -17,9 +17,11 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "zeptolibc-example",
-        .root_source_file = b.path("src/helloworld.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/helloworld.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     const zeptolibc_dep = b.dependency("zeptolibc", .{

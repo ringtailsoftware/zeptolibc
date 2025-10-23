@@ -3,8 +3,8 @@ const zeptolibc = @cImport({
     @cInclude("zeptolibc/zeptolibc.h");
 });
 
-const alloc_align = 16;
-const alloc_metadata_len = std.mem.alignForward(usize, alloc_align, @sizeOf(usize));
+const alloc_align = std.mem.Alignment.of(usize);
+const alloc_metadata_len = std.mem.alignForward(usize, @alignOf(usize), @sizeOf(usize));
 
 pub var allocatorOpt:?std.mem.Allocator = null;
 pub var writeFnOpt:?*const fn(data:[]const u8) void = null;
@@ -23,7 +23,7 @@ pub export fn zepto_abort() void {
     while (true) {}
 }
 
-pub export fn zepto_strlen(s: [*:0]const u8) callconv(.C) usize {
+pub export fn zepto_strlen(s: [*:0]const u8) callconv(.c) usize {
     const result = std.mem.len(s);
     return result;
 }
@@ -45,7 +45,7 @@ pub export fn zepto_memmove(dest: ?[*]u8, src: ?[*]const u8, n: usize) ?[*]u8 {
     return dest;
 }
 
-pub export fn zepto_strncmp(a: [*:0]const u8, b: [*:0]const u8, n: usize) callconv(.C) c_int {
+pub export fn zepto_strncmp(a: [*:0]const u8, b: [*:0]const u8, n: usize) callconv(.c) c_int {
     var i: usize = 0;
     while (a[i] == b[i] and a[0] != 0) : (i += 1) {
         if (i == n - 1) return 0;
@@ -53,7 +53,7 @@ pub export fn zepto_strncmp(a: [*:0]const u8, b: [*:0]const u8, n: usize) callco
     return @as(c_int, @intCast(a[i])) -| @as(c_int, @intCast(b[i]));
 }
 
-pub export fn zepto_strchr(s: [*:0]const u8, char: c_int) callconv(.C) ?[*:0]const u8 {
+pub export fn zepto_strchr(s: [*:0]const u8, char: c_int) callconv(.c) ?[*:0]const u8 {
     var next = s;
     while (true) : (next += 1) {
         if (next[0] == char) return next;
@@ -67,58 +67,91 @@ pub export fn zepto_strnlen(s: [*:0]const u8, max_len: usize) usize {
     return i;
 }
 
-pub export fn zepto_strncpy(s1: [*]u8, s2: [*:0]const u8, n: usize) callconv(.C) [*]u8 {
+pub export fn zepto_strncpy(s1: [*]u8, s2: [*:0]const u8, n: usize) callconv(.c) [*]u8 {
     const len = zepto_strnlen(s2, n);
     @memcpy(s1[0..len], s2);
     @memset(s1[len..][0 .. n - len], 0);
     return s1;
 }
 
-pub export fn zepto_memcpy(dst: [*]u8, src: [*]u8, size: usize) callconv(.C) [*]u8 {
+pub export fn zepto_memcpy(dst: [*]u8, src: [*]u8, size: usize) callconv(.c) [*]u8 {
     @memcpy(dst[0..@intCast(size)], src[0..@intCast(size)]);
     return dst;
 }
 
-pub export fn zepto_memset(dst: [*]u8, val: u8, size: usize) callconv(.C) [*]u8 {
+pub export fn zepto_memset(dst: [*]u8, val: u8, size: usize) callconv(.c) [*]u8 {
     @memset(dst[0..@intCast(size)], val);
     return dst;
 }
 
-pub export fn zepto_sin(x: f64) callconv(.C) f64 {
+pub export fn zepto_sin(x: f64) callconv(.c) f64 {
     return @sin(x);
 }
-pub export fn zepto_cos(x: f64) callconv(.C) f64 {
+pub export fn zepto_cos(x: f64) callconv(.c) f64 {
     return @cos(x);
 }
-pub export fn zepto_acos(x: f64) callconv(.C) f64 {
+pub export fn zepto_acos(x: f64) callconv(.c) f64 {
     return std.math.acos(x);
 }
-pub export fn zepto_sqrt(x: f64) callconv(.C) f64 {
+pub export fn zepto_sqrt(x: f64) callconv(.c) f64 {
     return std.math.sqrt(x);
 }
-pub export fn zepto_pow(x: f64, y: f64) callconv(.C) f64 {
+pub export fn zepto_pow(x: f64, y: f64) callconv(.c) f64 {
     return std.math.pow(f64, x, y);
 }
-pub export fn zepto_fabs(x: f64) callconv(.C) f64 {
+pub export fn zepto_fabs(x: f64) callconv(.c) f64 {
     return @abs(x);
 }
-pub export fn zepto_floor(x: f64) callconv(.C) f64 {
+pub export fn zepto_floor(x: f64) callconv(.c) f64 {
     return @floor(x);
 }
-pub export fn zepto_ceil(x: f64) callconv(.C) f64 {
+pub export fn zepto_ceil(x: f64) callconv(.c) f64 {
     return @ceil(x);
 }
-pub export fn zepto_fmod(x: f64, y: f64) callconv(.C) f64 {
+pub export fn zepto_fmod(x: f64, y: f64) callconv(.c) f64 {
     return @mod(x, y);
 }
 
-fn getGpaBuf(ptr: [*]u8) []align(alloc_align) u8 {
+fn getGpaBuf(ptr: [*]u8) []align(@alignOf(usize)) u8 {
     const start = @intFromPtr(ptr) - alloc_metadata_len;
     const len = @as(*usize, @ptrFromInt(start)).*;
     return @alignCast(@as([*]u8, @ptrFromInt(start))[0..len]);
 }
 
-pub export fn zepto_malloc(size: usize) callconv(.C) ?[*]align(alloc_align) u8 {
+//fn term_malloc(size: usize, user: ?*anyopaque) callconv(.c) ?*anyopaque {
+//    if (user) |userptr| {
+//        const self: *ZVTerm = @ptrCast(@alignCast(userptr));
+//        if (size == 0) {
+//            return null;
+//        }
+//        const full_len = alloc_metadata_len + size;
+//        const buf = self.allocator.alignedAlloc(u8, alloc_align, full_len) catch |err| switch (err) {
+//            error.OutOfMemory => return null,
+//        };
+//        @as(*usize, @ptrCast(buf)).* = full_len;
+//        const result = @as([*]align(@alignOf(usize)) u8, @ptrFromInt(@intFromPtr(buf.ptr) + alloc_metadata_len));
+//        @memset(result[0..size], 0); // zero memory
+//        return result;
+//    } else {
+//        return null;
+//    }
+//}
+//
+//fn getAllocBuf(ptr: [*]u8) []align(@alignOf(usize)) u8 {
+//    const start = @intFromPtr(ptr) - alloc_metadata_len;
+//    const len = @as(*usize, @ptrFromInt(start)).*;
+//    return @alignCast(@as([*]u8, @ptrFromInt(start))[0..len]);
+//}
+//
+//fn term_free(ptr: ?*anyopaque, user: ?*anyopaque) callconv(.c) void {
+//    if (user) |userptr| {
+//        const self: *ZVTerm = @ptrCast(@alignCast(userptr));
+//        const p = ptr orelse return;
+//        self.allocator.free(getAllocBuf(@ptrCast(p)));
+//    }
+//}
+
+pub export fn zepto_malloc(size: usize) callconv(.c) ?[*]align(@alignOf(usize)) u8 {
     if (size == 0) {
         return null;
     }
@@ -131,14 +164,14 @@ pub export fn zepto_malloc(size: usize) callconv(.C) ?[*]align(alloc_align) u8 {
         };
 
         @as(*usize, @ptrCast(buf)).* = full_len;
-        const result = @as([*]align(alloc_align) u8, @ptrFromInt(@intFromPtr(buf.ptr) + alloc_metadata_len));
+        const result = @as([*]align(@alignOf(usize)) u8, @ptrFromInt(@intFromPtr(buf.ptr) + alloc_metadata_len));
         return result;
     } else {
         return null;
     }
 }
 
-pub export fn zepto_realloc(ptr: ?[*]align(alloc_align) u8, size: usize) callconv(.C) ?[*]align(alloc_align) u8 {
+pub export fn zepto_realloc(ptr: ?[*]align(@alignOf(usize)) u8, size: usize) callconv(.c) ?[*]align(@alignOf(usize)) u8 {
     if (allocatorOpt) |allocator| {
         const gpa_buf = getGpaBuf(ptr orelse {
             const result = zepto_malloc(size);
@@ -150,7 +183,7 @@ pub export fn zepto_realloc(ptr: ?[*]align(alloc_align) u8, size: usize) callcon
         }
 
         const gpa_size = alloc_metadata_len + size;
-        if (allocator.rawResize(gpa_buf, std.mem.Alignment.fromByteUnits(std.math.log2(alloc_align)), gpa_size, @returnAddress())) {
+        if (allocator.rawResize(gpa_buf, std.mem.Alignment.fromByteUnits(std.math.log2(@sizeOf(usize))), gpa_size, @returnAddress())) {
             @as(*usize, @ptrCast(gpa_buf.ptr)).* = gpa_size;
             return ptr;
         }
@@ -165,14 +198,14 @@ pub export fn zepto_realloc(ptr: ?[*]align(alloc_align) u8, size: usize) callcon
             },
         };
         @as(*usize, @ptrCast(new_buf.ptr)).* = gpa_size;
-        const result = @as([*]align(alloc_align) u8, @ptrFromInt(@intFromPtr(new_buf.ptr) + alloc_metadata_len));
+        const result = @as([*]align(@alignOf(usize)) u8, @ptrFromInt(@intFromPtr(new_buf.ptr) + alloc_metadata_len));
         return result;
     } else {
         return null;
     }
 }
 
-pub export fn zepto_calloc(nmemb: usize, size: usize) callconv(.C) ?[*]align(alloc_align) u8 {
+pub export fn zepto_calloc(nmemb: usize, size: usize) callconv(.c) ?[*]align(@alignOf(usize)) u8 {
     const total = std.math.mul(usize, nmemb, size) catch {
         // TODO: set errno
         //errno = c.ENOMEM;
@@ -186,7 +219,7 @@ pub export fn zepto_calloc(nmemb: usize, size: usize) callconv(.C) ?[*]align(all
     return ptr;
 }
 
-pub export fn zepto_free(ptr: ?[*]align(alloc_align) u8) callconv(.C) void {
+pub export fn zepto_free(ptr: ?[*]align(@alignOf(usize)) u8) callconv(.c) void {
     if (allocatorOpt) |allocator| {
         const p = ptr orelse return;
         allocator.free(getGpaBuf(p));
