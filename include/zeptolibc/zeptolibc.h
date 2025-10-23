@@ -54,9 +54,9 @@ extern float zepto_sqrtf(float x);
 #define memcpy zepto_memcpy
 #define memset zepto_memset
 #define memmove zepto_memmove
-#define malloc zepto_malloc
+#define malloc(X) zepto_malloc(X)
 #define calloc zepto_calloc
-#define free zepto_free
+#define free(X) zepto_free(X)
 #define realloc zepto_realloc
 #define strlen zepto_strlen
 #define memcmp zepto_memcmp
